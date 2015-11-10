@@ -1,0 +1,20 @@
+libblockalloc -- block allocation library and ftrace-lite
+
+libblockalloc is a library that allows you to basically malloc and
+free blocks on a disk.  It is able to sync data, keep track of the
+used and free blocks, and naively cache recently used data.  This
+library is incomplete (needs a read, write, arb free, and arb malloc)
+but still might be useful.
+
+ftrace-lite is a quick hack to allow libblockalloc to compile on all
+plan 9/9front systems.  ftrace-lite, when enabled, prints out some of
+whats happening inside of the library to help with debugging and
+streamlining.  It isn't as good as the full ftrace (ftrace-lite isn't
+able to follow system calls into the kernel or blurt out mallocs and
+frees, only covers qlock, etc...) but it does some of the job.
+
+I didn't really test this library at all before releasing it.  When
+you find bugs, bitch at me and mail me a patch.
+
+Love,
+Veety
