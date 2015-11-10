@@ -1,0 +1,4 @@
+#!/bin/rc
+echo 'cp blockalloc.h /sys/include/blockalloc.h'
+cp blockalloc.h /sys/include/blockalloc.h
+exit ''
