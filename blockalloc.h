@@ -15,7 +15,6 @@ typedef struct Blockptr Blockptr;
 typedef struct BlockptrODF BlockptrODF;
 typedef struct Metablock Metablock;
 typedef struct Disk Disk;
-typedef struct Arena Arena;
 typedef struct Fn Fn;
 
 struct Fn {
@@ -81,6 +80,8 @@ int disksyncer(Disk*);
 void enableinstru(void);
 Fn* infn(char*);
 void action(Fn*,char*);
+void shit(Fn*,char*);
+void upanic(Fn*,char*);
 void outfn(Fn*);
 void iqlock(Fn*,QLock*);
 void iqunlock(Fn*,QLock*);
@@ -89,3 +90,7 @@ void iqunlock(Fn*,QLock*);
 // device, buffer, length, offset
 u64int dread(Disk*,void*,u64int,u64int);
 u64int dwrite(Disk*,void*,u64int,u64int);
+
+/* ream.c */
+int ream(int,u64int);
+int ream1(int,u64int,u64int,u64int,u64int);

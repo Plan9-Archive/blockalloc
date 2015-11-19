@@ -129,4 +129,3 @@ fd2disk(int fd, Disk* d, uchar opts)
 	outfn(f);
 	return 0;
 }
-

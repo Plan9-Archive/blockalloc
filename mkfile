@@ -7,12 +7,14 @@ OFILES=\
 	pointers.$O \
 	instru.$O \
 	io.$O \
+	ream.$O \
 
 CFILES=\
 	disk.c \
 	pointers.c \
 	instru.c \
 	io.c \
+	ream.c \
 
 HFILES=\
 	blockalloc.h \
