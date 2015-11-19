@@ -42,6 +42,7 @@ syncbptrs(Disk *d)
 {
 	Fn *f = infn("syncbptrs");
 	iqlock(f,&d->synclock);
+	iqlock(f,&d->writelock);
 	if(d->blocks_cached){
 		for(u64int i = 0; i < d->meta->totalblocks; i++){
 			writebptr(d,&d->ptrs[i]);
@@ -71,6 +72,11 @@ readbptr(Disk *d, Blockptr *b, u64int block)
 		return BPTRSIZE;
 	} else {
 		action(f,"preadn 1");
+		/* TODO: make a Blockptr odf type and use that instead of the Blockptr type directly.
+				 In theory, using the Blockptr type directly without a mallocz could possibly
+				 cause some issues if the user doesn't know whether caching is on or not.
+				 Using mallocz has performance implications and I should probably avoid it.
+		*/
 		u64int retval = preadn(d->fd, b, d->meta->ptrmapstart+(BPTRSIZE*block),BPTRSIZE);
 		b->buffer = nil;
 		outfn(f);
@@ -78,6 +84,17 @@ readbptr(Disk *d, Blockptr *b, u64int block)
 	}
 }
 
+/*
+writebptr should basically only be used by sync or in cases when
+you're using the block pointer rewriting capabilities of blockalloc to
+do copy-on-write of data blocks or some shit.  writebptr *always* does
+a write(2) to the disk where as readbptr uses the in-memory structures
+instead of the on-disk structures.  Also if you're modifying
+readbptr'd Blockptrs and the cache is available then you *are*
+modifying the on-disk Blockptrs.  Remember, all of these functions are
+probably dangerous; think carefully and don't do stupid things with
+other people's data.
+*/
 u64int
 writebptr(Disk *d, Blockptr *b)
 {
@@ -125,9 +142,6 @@ allocblock(Disk *d, Blockptr *b)
 		outfn(f);
 		return 0;
 	}
-	action(f,"retval -1");
-	outfn(f);
-	return -1;
 }
 
 int
@@ -159,9 +173,8 @@ readblock(Disk *d, Blockptr *b, void *buf)
 {
 	Fn *f = infn("readblock");
 	int fd = d->fd;
-	u64int bmapstart = d->meta->bitmapstart;
 	u64int blocksize = d->meta->blocksize;
-	u64int offset = b->offset+d->meta->blocksize;
+	u64int offset = b->offset+d->meta->blocksize+d->meta->bitmapstart;
 	iqlock(f,&d->synclock);
 	if(d->blocks_cached && b->buffer != nil){
 		buf = b->buffer;
@@ -179,31 +192,27 @@ readblock(Disk *d, Blockptr *b, void *buf)
 		outfn(f);
 		return preadn(fd,buf,offset,blocksize);
 	}
-	outfn(f);
-	return 0;
 }
 
 u64int
 writeblock(Disk *d, Blockptr *b, void *buf)
 {
-	Fn *f = infn("writeblock");
+	Fn *f= infn("writeblock");
 	int fd = d->fd;
-	int syncing = 0;
-	if(canqlock(&d->synclock)){
-		syncing = 1;
-		iqlock(f,&d->synclock);
-	}
-	u64int bmapstart = d->meta->bitmapstart;
-	u64int blocksize = d->meta->blocksize;
-	u64int offset = b->offset+d->meta->blocksize;
-	if(d->blocks_cached && !syncing){
-		memcpy(buf,b->buffer,blocksize);
-		iqunlock(f,&d->synclock);
-		action(f,"return (not syncing)");
+	if(canqlock(&d->synclock) && d->blocks_cached){
+		iqlock(f,&d->writelock);
+		memcpy(b->buffer,buf,d->meta->blocksize);
+		action(f,"return (not writing, blocks cached, no sync)");
+		iqunlock(f,&d->writelock);
 		outfn(f);
-		return blocksize;
+		return d->meta->blocksize;
+	} else if (!canqlock(&d->synclock) && d->blocks_cached) {
+		action(f,"return (writing, blocks cached, syncing)");
+		outfn(f);
+		return pwriten(fd,buf,b->offset+d->meta->bitmapstart,d->meta->blocksize);
+	} else {
+		action(f,"return (writing, blocks not cached, not syncing)");
+		outfn(f);
+		return pwriten(fd,buf,b->offset+d->meta->bitmapstart,d->meta->blocksize);
 	}
-	action(f,"return (syncing)");
-	outfn(f);
-	return pwriten(fd,buf,offset,blocksize);
 }
