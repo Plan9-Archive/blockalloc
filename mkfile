@@ -6,11 +6,13 @@ OFILES=\
 	disk.$O \
 	pointers.$O \
 	instru.$O \
+	io.$O \
 
 CFILES=\
 	disk.c \
 	pointers.c \
 	instru.c \
+	io.c \
 
 HFILES=\
 	blockalloc.h \

@@ -12,8 +12,10 @@ enum {
 };
 
 typedef struct Blockptr Blockptr;
+typedef struct BlockptrODF BlockptrODF;
 typedef struct Metablock Metablock;
 typedef struct Disk Disk;
+typedef struct Arena Arena;
 typedef struct Fn Fn;
 
 struct Fn {
@@ -24,8 +26,17 @@ struct Fn {
 
 struct Blockptr {
 	uchar used; // is the block in use?
+	uchar notcurrent; // is the block current?
 	u64int offset; // where is it from the start of the bitmap?
+	u64int next; // if the block is not current, this points to the next possible current block
 	void *buffer; // buffer for sync if blocks are cached
+};
+
+struct BlockptrODF {  // on-disk format of a block pointer. contains currently unused fields.
+	uchar used;
+	uchar notcurrent;
+	u64int offset;
+	u64int next;
 };
 
 struct Metablock { // information about the managed disk
@@ -37,12 +48,14 @@ struct Metablock { // information about the managed disk
 	
 struct Disk {
 	int fd; // rw channel
+	u64int size; // size of the disk
 	Metablock *meta; // the metadata block
 	uint blocks_cached; // are the blocks cached?
 	int syncpid;
 	int debug;
 	QLock syncing;
 	QLock synclock;
+	QLock writelock;
 	Blockptr *ptrs; // blockpointers if they're cached
 };
 
@@ -71,3 +84,8 @@ void action(Fn*,char*);
 void outfn(Fn*);
 void iqlock(Fn*,QLock*);
 void iqunlock(Fn*,QLock*);
+
+/* io.c */
+// device, buffer, length, offset
+u64int dread(Disk*,void*,u64int,u64int);
+u64int dwrite(Disk*,void*,u64int,u64int);

@@ -2,6 +2,23 @@
 #include <libc.h>
 #include <blockalloc.h>
 
+int
+murder(int pid)
+{
+	int ctlfd;
+	Fn *f = infn("murder");
+	if((ctlfd = open(smprint("/proc/%d/ctl",pid),OWRITE)) < 0){
+		action(f,smprint("unable to murder pid %d (retval -1)",pid));
+		outfn(f);
+		return -1;
+	}
+	fprint(ctlfd,"kill\n");
+	close(ctlfd);
+	action(f,smprint("crucified pid %d",pid));
+	outfn(f);
+	return 0;
+}
+
 void
 disksyncer1(Disk *d)
 {
@@ -36,7 +53,6 @@ opendisk(char* fname, Disk* d, uchar opts)
 {
 	int fd;
 	if((fd = open(fname,OREAD|OWRITE)) < 0){
-		d = nil;
 		return -1;
 	}
 	return fd2disk(fd,d,opts);
@@ -48,7 +64,7 @@ closedisk(Disk* d)
 	if(d->blocks_cached){
 		qlock(&d->syncing);
 		syncbptrs(d);
-		if(postnote(PNPROC,d->syncpid,"fucking die you cunt") == 0){
+		if(murder(d->syncpid) == 0){
 			free(d->ptrs);
 			free(d->meta);
 			close(d->fd);
@@ -70,7 +86,6 @@ closedisk(Disk* d)
 		free(d);
 		return 0;
 	}
-	return -2;
 }
 
 int
@@ -80,13 +95,14 @@ fd2disk(int fd, Disk* d, uchar opts)
 	Disk *bf = malloc(sizeof(Disk));
 	Metablock *m = malloc(sizeof(Metablock));
 	bf->fd = fd;
+	bf->size = (u64int)seek(bf->fd,0,2);
+	seek(bf->fd,0,0);
 	action(f,"preadn 1");
 	if((preadn(bf->fd,m,2,sizeof(Metablock))) < sizeof(Metablock)){
 		action(f,"short read");
 		free(m);
 		close(bf->fd);
 		free(bf);
-		d = nil;
 		outfn(f);
 		return -2;
 	}
