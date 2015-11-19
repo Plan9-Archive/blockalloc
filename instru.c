@@ -11,6 +11,12 @@ does the same thing.
 
 int enable_instru = 0;
 
+/*
+if using ftrace, run this *very* first.  infn calls started before
+this will not start logging until the next time the function gets
+called.
+*/
+
 void
 initinstru(void)
 {
@@ -41,6 +47,36 @@ action(Fn* f, char* c)
 		fprint(2,"instru: %s: %s\n",f->name,c);
 	} else if (canqlock(&f->l)) {
 		fprint(2,"instru: error: action %s done outside of function\n",c);
+	}
+}
+
+void
+shit(Fn* f, char *c)
+{
+	if(f == nil || enable_instru == 0){
+		return;
+	} else if (f->active == 1 && !canqlock(&f->l)){
+		fprint(2,"instru: error: %s: %s (explicit)\n",f->name,c);
+	} else if (canqlock(&f->l)) {
+		fprint(2,"instru: error: action %s done outside of function (automatic)\n",c);
+	}
+}
+
+void
+upanic(Fn* f, char *c)
+{
+	char *msg;
+	if(f == nil || enable_instru == 0)
+		return;
+	msg = smprint("instru: PANIC: %s: %s [pid %d]",f->name,c,getpid());
+	if (f->active == 1 && !canqlock(&f->l)){
+		fprint(2,"%s\n",msg);
+		exits(msg);
+		return;
+	} else {
+		fprint(2,"%s (panic outside function calling)\n",msg);
+		exits(smprint("%s (panic outside function calling)",msg));
+		return;
 	}
 }
 
