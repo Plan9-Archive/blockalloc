@@ -18,3 +18,13 @@ you find bugs, bitch at me and mail me a patch.
 
 Love,
 Veety
+
+Installation:
+	mk installheaders
+	mk or mk install
+
+Using:
+	read the docs
+
+Docs:
+	Intentionally left blank
