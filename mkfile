@@ -25,6 +25,14 @@ UPDATE=\
 	$CFILES \
 	$HFILES \
 
-all:V: $LIB
+CLEANFILES=\
+	ftrace-test \
+
+ftrace-test: all
+	$CC tests/ftrace-test.c
+	$LD -o ftrace-test ftrace-test.$O
+
+$HFILES:
+	for(i in $HFILES) cp $i /sys/include
 
 </sys/src/cmd/mksyslib
