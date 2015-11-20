@@ -27,6 +27,7 @@ UPDATE=\
 
 CLEANFILES=\
 	ftrace-test \
+	tests.log \
 
 ftrace-test: all
 	$CC tests/ftrace-test.c
@@ -36,6 +37,10 @@ installheaders:
 	for(i in $HFILES){
 		cp $i /sys/include
 	}
+
+run-tests: ftrace-test
+	rm -f tests.log
+	ftrace-test >> tests.log >[2=1]
 
 </sys/src/cmd/mksyslib
 
