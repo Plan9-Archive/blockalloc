@@ -33,6 +33,8 @@ fn1(void)
 	Fn *f = infn("fn1");
 	iqlock(f,&g);
 	if(rfork(RFPROC)==0){
+		if(!canqlock(&g))
+			upanic(f,"some lock order garbage is happening");
 		iqunlock(f,&g);
 		upanic(f,"penis");
 	}
@@ -47,6 +49,8 @@ fn2(void)
 	if((x = rfork(RFPROC)) == 0){
 		Fn *f2 = infn("fn2@proc");
 		fn1();
+		action(f,smprint("exiting pid = %d",getpid()));
+		exits("error: success");
 		outfn(f2);
 	} else if(x == -1){
 		char *s = mallocz(sizeof(char)*1024,1);
