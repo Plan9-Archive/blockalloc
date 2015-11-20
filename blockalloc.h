@@ -19,7 +19,7 @@ typedef struct Fn Fn;
 
 struct Fn {
 	char *name;
-	QLock l;
+	Lock l;
 	uint active;
 };
 
@@ -77,7 +77,7 @@ int fd2disk(int,Disk*,uchar);
 int disksyncer(Disk*);
 
 /* instru.c */
-void enableinstru(void);
+void initinstru(void);
 Fn* infn(char*);
 void action(Fn*,char*);
 void shit(Fn*,char*);

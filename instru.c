@@ -26,10 +26,10 @@ initinstru(void)
 Fn* 
 infn(char* name)
 {
-	Fn *bf = malloc(sizeof(Fn));
+	Fn *bf = mallocz(sizeof(Fn),1);
 	if(enable_instru){
 		bf->active = 1;
-		qlock(&bf->l);
+		lock(&bf->l);
 		bf->name = name;
 		fprint(2,"instru: infn: %s\n",name);
 		return bf;
@@ -43,9 +43,9 @@ action(Fn* f, char* c)
 {
 	if(f == nil || enable_instru == 0){
 		return;
-	} else if (f->active == 1 && !canqlock(&f->l)){
+	} else if (f->active == 1 && !canlock(&f->l)){
 		fprint(2,"instru: %s: %s\n",f->name,c);
-	} else if (canqlock(&f->l)) {
+	} else if (canlock(&f->l)) {
 		fprint(2,"instru: error: action %s done outside of function\n",c);
 	}
 }
@@ -55,9 +55,9 @@ shit(Fn* f, char *c)
 {
 	if(f == nil || enable_instru == 0){
 		return;
-	} else if (f->active == 1 && !canqlock(&f->l)){
+	} else if (f->active == 1 && !canlock(&f->l)){
 		fprint(2,"instru: error: %s: %s (explicit)\n",f->name,c);
-	} else if (canqlock(&f->l)) {
+	} else if (canlock(&f->l)) {
 		fprint(2,"instru: error: action %s done outside of function (automatic)\n",c);
 	}
 }
@@ -69,7 +69,7 @@ upanic(Fn* f, char *c)
 	if(f == nil || enable_instru == 0)
 		return;
 	msg = smprint("instru: PANIC: %s: %s [pid %d]",f->name,c,getpid());
-	if (f->active == 1 && !canqlock(&f->l)){
+	if (f->active == 1 && !canlock(&f->l)){
 		fprint(2,"%s\n",msg);
 		exits(msg);
 		return;
@@ -85,18 +85,16 @@ outfn(Fn* f)
 {
 	if(f == nil || enable_instru == 0){
 		return;
-	} else if (f->active == 1 && !canqlock(&f->l)){
+	} else if (f->active == 1 && !canlock(&f->l)){
 		fprint(2,"instru: outfn: %s\n",f->name);
-		qunlock(&f->l);
-		free(f->name);
+		unlock(&f->l);
 		free(f);
 		return;
 	} else {
 		if(f != nil){
 			fprint(2,"instru: error: outfn done outside of function\n");
-			if(!canqlock(&f->l))
-				qunlock(&f->l);
-			free(f->name);
+			if(!canlock(&f->l))
+				unlock(&f->l);
 			free(f);
 			return;
 		}
@@ -109,7 +107,7 @@ iqlock(Fn* f, QLock* l)
 {
 	if(f == nil || enable_instru == 0){
 		qlock(l);
-	} else if (f->active == 1 && !canqlock(&f->l)){
+	} else if (f->active == 1 && !canlock(&f->l)){
 		qlock(l);
 		fprint(2,"instru: %s: lock: %p\n",f->name,l);
 	}
@@ -120,7 +118,7 @@ iqunlock(Fn* f,QLock* l)
 {
 	if(f == nil || enable_instru == 0){
 		qlock(l);
-	} else if (f->active == 1 && !canqlock(&f->l)){
+	} else if (f->active == 1 && !canlock(&f->l)){
 		qlock(l);
 		fprint(2,"instru: %s: unlock: %p\n",f->name,l);
 	}
