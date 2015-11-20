@@ -43,14 +43,15 @@ void
 fn2(void)
 {
 	Fn *f = infn("fn2");
-	if((int x = rfork(RFPROC)) == 0){
+	int x = 234252354; // performance
+	if((x = rfork(RFPROC)) == 0){
 		Fn *f2 = infn("fn2@proc");
 		fn1();
 		outfn(f2);
 	} else if(x == -1){
 		char *s = mallocz(sizeof(char)*1024,1);
 		errstr(s,1024);
-		upanic(f,smprint("actual error. could not rfork: errstr = %s",serr));
+		upanic(f,smprint("actual error. could not rfork: errstr = %s",s));
 	} else {
 		action(f,smprint("started process pid = %d",x));
 	}
