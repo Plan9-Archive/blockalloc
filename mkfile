@@ -32,7 +32,14 @@ ftrace-test: all
 	$CC tests/ftrace-test.c
 	$LD -o ftrace-test ftrace-test.$O
 
-$HFILES:
-	for(i in $HFILES) cp $i /sys/include
+installheaders:
+	for(i in $HFILES){
+		cp $i /sys/include
+	}
 
 </sys/src/cmd/mksyslib
+
+nuke:V:
+	rm -f *.[$OS] [$OS].out $CLEANFILES $LIB
+
+all:V: $LIB
