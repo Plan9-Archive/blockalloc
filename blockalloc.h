@@ -92,5 +92,5 @@ u64int dread(Disk*,void*,u64int,u64int);
 u64int dwrite(Disk*,void*,u64int,u64int);
 
 /* ream.c */
-int ream(int,u64int);
-int ream1(int,u64int,u64int,u64int,u64int);
+int ream(int,u64int,int);
+int ream1(int,u64int,u64int,u64int,u64int,int);

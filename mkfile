@@ -27,10 +27,12 @@ UPDATE=\
 
 CLEANFILES=\
 	ftrace-test \
+	ream-test \
 	tests.log \
 
 TESTS=\
 	ftrace-test \
+	ream-test \
 
 all:V: $LIB
 
@@ -38,12 +40,16 @@ ftrace-test:
 	$CC tests/ftrace-test.c
 	$LD -o ftrace-test ftrace-test.$O
 
+ream-test:
+	$CC tests/ream-test.c
+	$LD -o ream-test ream-test.$O
+
 installheaders:
 	for(i in $HFILES){
 		cp $i /sys/include
 	}
 
-run-tests:EVQ: ftrace-test
+run-tests:EVQ: ftrace-test ream-test
 	echo 'running tests...'
 	{
 		echo -n 'tests started at '
@@ -55,7 +61,7 @@ run-tests:EVQ: ftrace-test
 			echo '-----------------------------------------------------'
 		}
 		echo 'tests done.'
-		} > tests.log
+	} > tests.log
 
 </sys/src/cmd/mksyslib
 
