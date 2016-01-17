@@ -89,10 +89,10 @@ closedisk(Disk* d)
 }
 
 int
-fd2disk(int fd, Disk* d, uchar opts)
+fd2disk(int fd, Disk *bf, uchar opts)
 {
 	Fn *f = infn("fd2disk");
-	Disk *bf = malloc(sizeof(Disk));
+	bf = malloc(sizeof(Disk));
 	Metablock *m = malloc(sizeof(Metablock));
 	bf->fd = fd;
 	bf->size = (u64int)seek(bf->fd,0,2);
@@ -112,20 +112,17 @@ fd2disk(int fd, Disk* d, uchar opts)
 		bf->blocks_cached = 1;
 		if(loadbptrs(bf) == 0){
 			if(disksyncer(bf) == 0){
-				d = bf;
 				outfn(f);
 				return 0;
 			}
 			action(f,"syncer did not start (rfork error)");
-			free(d->ptrs);
+			free(bf->ptrs);
 			bf->blocks_cached = 0;
-			d = bf;
 			outfn(f);
 			return -3;
 		}
 		action(f,"failure to enable caching");
 	}
-	d = bf;
 	outfn(f);
 	return 0;
 }
